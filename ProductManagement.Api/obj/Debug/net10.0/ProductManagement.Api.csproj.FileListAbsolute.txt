@@ -166,3 +166,4 @@ C:\Users\LENOVO\ProductManagement\ProductManagement.Api\obj\Debug\net10.0\refint
 C:\Users\LENOVO\ProductManagement\ProductManagement.Api\obj\Debug\net10.0\ProductManagement.Api.pdb
 C:\Users\LENOVO\ProductManagement\ProductManagement.Api\obj\Debug\net10.0\ProductManagement.Api.genruntimeconfig.cache
 C:\Users\LENOVO\ProductManagement\ProductManagement.Api\obj\Debug\net10.0\ref\ProductManagement.Api.dll
+C:\Users\LENOVO\ProductManagement\ProductManagement.Api\obj\Debug\net10.0\ProductManagement.Api.sourcelink.json
