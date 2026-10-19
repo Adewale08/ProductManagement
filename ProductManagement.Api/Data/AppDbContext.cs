@@ -7,6 +7,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<Product> Products => Set<Product>();
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<Category> Categories => Set<Category>();
+    public DbSet<Supplier> Suppliers => Set<Supplier>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         var product = modelBuilder.Entity<Product>();
@@ -28,6 +29,18 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
         category.HasKey(c => c.Id);
         category.Property(c => c.Name).HasMaxLength(100).IsRequired();
         category.Property(c => c.Description).HasMaxLength(250);
+
+        var supplier = modelBuilder.Entity<Supplier>();
+        supplier.HasKey(s => s.Id);
+        supplier.Property(s => s.Name).HasMaxLength(120).IsRequired();
+        supplier.Property(s => s.Email).HasMaxLength(254).IsRequired();
+        supplier.Property(s => s.PhoneNumber).HasMaxLength(30);
+
+        modelBuilder.Entity<Product>()
+            .HasOne(p=> p.Supplier)
+            .WithMany(s => s.Products)
+            .HasForeignKey(p => p.SupplierId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 
 }

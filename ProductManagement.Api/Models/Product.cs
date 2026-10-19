@@ -12,5 +12,7 @@ public class Product
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAtUtc { get; set; }
+    public int? SupplierId { get; set; }
+    public Supplier? Supplier { get; set; }
 }
 
