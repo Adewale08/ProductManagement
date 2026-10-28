@@ -4,6 +4,8 @@ using ProductManagement.Api.Data;
 using ProductManagement.Api.Repositories;
 using Microsoft.Extensions.Logging;
 using ProductManagement.Api.Exceptions;
+using Microsoft.AspNetCore.Identity;
+using ProductManagement.Api.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,12 +14,11 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
-builder.Services.AddScoped<ICustomerService, CustomerService>();
-builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<ISupplierRepository, SupplierRepository>();
 builder.Services.AddScoped<ISupplierService, SupplierService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
@@ -29,6 +30,11 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         .UseSqlServer(connectionString)
         .EnableDetailedErrors()
         .LogTo(Console.WriteLine, LogLevel.Information));
+
+builder.Services
+    .AddIdentity<ApplicationUser, IdentityRole>()
+    .AddEntityFrameworkStores<AppDbContext>()
+    .AddDefaultTokenProviders();
 
 var app = builder.Build();
 app.UseExceptionHandler();
@@ -44,5 +50,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseAuthentication();
+app.UseAuthorization();
 app.MapControllers();
+
 app.Run();

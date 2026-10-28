@@ -14,5 +14,7 @@ public class Product
     public DateTime? UpdatedAtUtc { get; set; }
     public int? SupplierId { get; set; }
     public Supplier? Supplier { get; set; }
+    public int? BusinessId { get; set; }
+    public Business? Business { get; set; }
 }
 

@@ -1,15 +1,22 @@
 using Microsoft.EntityFrameworkCore;
 using ProductManagement.Api.Models;
 namespace ProductManagement.Api.Data;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 public class AppDbContext(DbContextOptions<AppDbContext> options)
-    : DbContext(options)
+    : IdentityDbContext<ApplicationUser>(options)
 {
     public DbSet<Product> Products => Set<Product>();
-    public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Supplier> Suppliers => Set<Supplier>();
+    public DbSet<Order> Orders => Set<Order>();
+    public DbSet<OrderItem> OrderItems => Set<OrderItem>();
+    public DbSet<Business> Businesses => Set<Business>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<Business>().ToTable("Business");
+
         var product = modelBuilder.Entity<Product>();
         product.HasKey(p => p.Id);
         product.Property(p => p.Name).HasMaxLength(120).IsRequired();
@@ -19,12 +26,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
         product.Property(p => p.Price).HasPrecision(18, 2);
         product.Property(p => p.Description).HasMaxLength(500);
         
-        var customer = modelBuilder.Entity<Customer>();
-        customer.HasKey(c => c.Id);
-        customer.Property(c => c.Name).HasMaxLength(120).IsRequired();
-        customer.Property(c => c.Email).HasMaxLength(120).IsRequired();
-        customer.Property(c => c.PhoneNumber).HasMaxLength(20);
-
         var category = modelBuilder.Entity<Category>();
         category.HasKey(c => c.Id);
         category.Property(c => c.Name).HasMaxLength(100).IsRequired();
@@ -41,6 +42,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             .WithMany(s => s.Products)
             .HasForeignKey(p => p.SupplierId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Order>()
+            .Property(order => order.TotalAmount)
+            .HasPrecision(18, 2);
+
+        modelBuilder.Entity<OrderItem>()
+            .Property(item => item.UnitPrice)
+            .HasPrecision(18, 2);
     }
 
 }
