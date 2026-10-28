@@ -1,7 +1,5 @@
 using Microsoft.AspNetCore.Diagnostics;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
-using Microsoft.EntityFrameworkCore;
 
 namespace ProductManagement.Api.Exceptions;
 public class GlobalExceptionHandler(
@@ -30,9 +28,51 @@ public class GlobalExceptionHandler(
             return true;
         }
 
-        if (exception is DbUpdateException dbException &&
-            dbException.InnerException is SqlException sqlException &&
-            (sqlException.Number == 2601 || sqlException.Number == 2627))
+        if (exception is BusinessNotAssociatedException businessNotAssociatedException)
+        {
+            httpContext.Response.StatusCode =
+                StatusCodes.Status409Conflict;
+
+            await httpContext.Response.WriteAsJsonAsync(new
+            {
+                status = 409,
+                message = businessNotAssociatedException.Message
+            }, ct);
+
+            return true;
+        }
+
+        if (exception is OrderConflictException orderConflictException)
+        {
+            httpContext.Response.StatusCode =
+                StatusCodes.Status409Conflict;
+
+            await httpContext.Response.WriteAsJsonAsync(new
+            {
+                status = 409,
+                message = orderConflictException.Message
+            }, ct);
+
+            return true;
+        }
+
+        if (exception is OrderNotFoundException orderNotFoundException)
+        {
+            httpContext.Response.StatusCode =
+                StatusCodes.Status404NotFound;
+
+            await httpContext.Response.WriteAsJsonAsync(new
+            {
+                status = 404,
+                message = orderNotFoundException.Message
+            }, ct);
+
+            return true;
+        }
+
+        var sqlException = FindSqlException(exception);
+
+        if (sqlException?.Number is 2601 or 2627)
         {
             httpContext.Response.StatusCode =
                 StatusCodes.Status409Conflict;
@@ -41,6 +81,20 @@ public class GlobalExceptionHandler(
             {
                 status = 409,
                 message = "A product with the specified SKU already exists."
+            }, ct);
+
+            return true;
+        }
+
+        if (sqlException?.Number == 1205)
+        {
+            httpContext.Response.StatusCode =
+                StatusCodes.Status409Conflict;
+
+            await httpContext.Response.WriteAsJsonAsync(new
+            {
+                status = 409,
+                message = "A concurrent database update conflicted with this request. Please retry."
             }, ct);
 
             return true;
@@ -84,5 +138,20 @@ public class GlobalExceptionHandler(
         }, ct);
 
         return true;
+    }
+
+    private static SqlException? FindSqlException(Exception exception)
+    {
+        for (Exception? current = exception;
+             current is not null;
+             current = current.InnerException)
+        {
+            if (current is SqlException sqlException)
+            {
+                return sqlException;
+            }
+        }
+
+        return null;
     }
 }

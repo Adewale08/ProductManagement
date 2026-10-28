@@ -1,11 +1,8 @@
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-
 namespace ProductManagement.Api.DTOs;
+
 public record OrderItemResponseDto(
-    int Id,
     int ProductId,
+    string ProductName,
     int Quantity,
-    DateTime CreatedAtUtc,
-    DateTime? UpdatedAtUtc);
+    decimal UnitPrice,
+    decimal LineTotal);

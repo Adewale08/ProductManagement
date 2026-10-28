@@ -1,14 +1,9 @@
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace ProductManagement.Api.DTOs;
 
-public class CreateOrderDTO
+public class CreateOrderDto
 {
-    [Required]
-    public List<CreateOrderItemDTO> OrderItems { get; set; } = new List<CreateOrderItemDTO>();
-
-    [Required]
-    public DateTime OrderDate { get; set; }
+    [Required, MinLength(1)]
+    public List<CreateOrderItemDto> Items { get; set; } = [];
 }

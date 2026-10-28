@@ -47,9 +47,22 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             .Property(order => order.TotalAmount)
             .HasPrecision(18, 2);
 
-        modelBuilder.Entity<OrderItem>()
-            .Property(item => item.UnitPrice)
-            .HasPrecision(18, 2);
+        modelBuilder.Entity<Order>()
+            .HasOne(order => order.Business)
+            .WithMany()
+            .HasForeignKey(order => order.BusinessId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        var orderItem = modelBuilder.Entity<OrderItem>();
+        orderItem.Property(item => item.UnitPrice).HasPrecision(18, 2);
+        orderItem.HasOne(item => item.Order)
+            .WithMany(order => order.Items)
+            .HasForeignKey(item => item.OrderId)
+            .OnDelete(DeleteBehavior.Restrict);
+        orderItem.HasOne(item => item.Product)
+            .WithMany()
+            .HasForeignKey(item => item.ProductId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 
 }

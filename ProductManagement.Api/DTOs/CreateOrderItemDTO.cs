@@ -1,14 +1,12 @@
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace ProductManagement.Api.DTOs;
 
-public class CreateOrderItemDTO
+public class CreateOrderItemDto
 {
-    [Required]
+    [Range(1, int.MaxValue)]
     public int ProductId { get; set; }
 
-    [Required]
+    [Range(1, int.MaxValue)]
     public int Quantity { get; set; }
 }

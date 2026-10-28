@@ -1,7 +1,8 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProductManagement.Api.DTOs;
 using ProductManagement.Api.Services;
-using Microsoft.AspNetCore.Authorization;
 
 namespace ProductManagement.Api.Controllers;
 
@@ -17,26 +18,51 @@ public class ProductsController : ControllerBase
         _service = service;
     }
 
-    [HttpGet]
-    public async Task<ActionResult<IReadOnlyCollection<ProductResponseDto>>> GetAll(CancellationToken ct)
+    private string? GetCurrentUserId()
     {
-        var products = await _service.GetAllAsync(ct);
+        return User.FindFirstValue(ClaimTypes.NameIdentifier);
+    }
+
+    [HttpGet]
+    public async Task<ActionResult<IReadOnlyCollection<ProductResponseDto>>> GetAll(
+        CancellationToken ct)
+    {
+        var userId = GetCurrentUserId();
+
+        if (userId is null)
+            return Unauthorized();
+
+        var products = await _service.GetAllAsync(userId, ct);
 
         return Ok(products);
     }
 
     [HttpGet("{id:int}")]
-    public async Task<ActionResult<ProductResponseDto>> GetById(int id, CancellationToken ct)
+    public async Task<ActionResult<ProductResponseDto>> GetById(
+        int id,
+        CancellationToken ct)
     {
-        var product = await _service.GetByIdAsync(id, ct);
+        var userId = GetCurrentUserId();
+
+        if (userId is null)
+            return Unauthorized();
+
+        var product = await _service.GetByIdAsync(id, userId, ct);
 
         return product is null ? NotFound() : Ok(product);
     }
 
     [HttpPost]
-    public async Task<ActionResult<ProductResponseDto>> Create(CreateProductDto request, CancellationToken ct)
+    public async Task<ActionResult<ProductResponseDto>> Create(
+        CreateProductDto request,
+        CancellationToken ct)
     {
-        var product = await _service.CreateAsync(request, ct);
+        var userId = GetCurrentUserId();
+
+        if (userId is null)
+            return Unauthorized();
+
+        var product = await _service.CreateAsync(request, userId, ct);
 
         return CreatedAtAction(
             nameof(GetById),
@@ -50,7 +76,13 @@ public class ProductsController : ControllerBase
         UpdateProductDto request,
         CancellationToken ct)
     {
-        var updated = await _service.UpdateAsync(id, request, ct);
+        var userId = GetCurrentUserId();
+
+        if (userId is null)
+            return Unauthorized();
+
+        var updated = await _service.UpdateAsync(
+            id, request, userId, ct);
 
         return updated ? NoContent() : NotFound();
     }
@@ -60,7 +92,12 @@ public class ProductsController : ControllerBase
         int id,
         CancellationToken ct)
     {
-        var deleted = await _service.DeleteAsync(id, ct);
+        var userId = GetCurrentUserId();
+
+        if (userId is null)
+            return Unauthorized();
+
+        var deleted = await _service.DeleteAsync(id, userId, ct);
 
         return deleted ? NoContent() : NotFound();
     }
@@ -71,10 +108,13 @@ public class ProductsController : ControllerBase
         UpdateStockDto request,
         CancellationToken ct)
     {
+        var userId = GetCurrentUserId();
+
+        if (userId is null)
+            return Unauthorized();
+
         var updated = await _service.UpdateStockAsync(
-            id,
-            request.StockQuantity,
-            ct);
+            id, request.StockQuantity, userId, ct);
 
         return updated ? NoContent() : NotFound();
     }

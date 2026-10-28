@@ -189,4 +189,3 @@ C:\Users\LENOVO\AppData\Local\Temp\ProductManagement.Api-auth-build\ProductManag
 C:\Users\LENOVO\AppData\Local\Temp\ProductManagement.Api-auth-build\ProductManagement.Api.runtimeconfig.json
 C:\Users\LENOVO\AppData\Local\Temp\ProductManagement.Api-auth-build\ProductManagement.Api.dll
 C:\Users\LENOVO\AppData\Local\Temp\ProductManagement.Api-auth-build\ProductManagement.Api.pdb
-C:\Users\LENOVO\AppData\Local\Temp\ProductManagement.Api-build\ProductManagement.Api.exe

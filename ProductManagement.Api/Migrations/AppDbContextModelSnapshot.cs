@@ -243,7 +243,7 @@ namespace ProductManagement.Api.Migrations
 
                     b.HasIndex("OwnerId");
 
-                    b.ToTable("Business");
+                    b.ToTable("Business", (string)null);
                 });
 
             modelBuilder.Entity("ProductManagement.Api.Models.Category", b =>
@@ -285,6 +285,9 @@ namespace ProductManagement.Api.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("BusinessId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("datetime2");
 
@@ -297,6 +300,8 @@ namespace ProductManagement.Api.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("BusinessId");
 
                     b.ToTable("Orders");
                 });
@@ -325,6 +330,8 @@ namespace ProductManagement.Api.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("OrderId");
+
+                    b.HasIndex("ProductId");
 
                     b.ToTable("OrderItems");
                 });
@@ -482,13 +489,34 @@ namespace ProductManagement.Api.Migrations
                     b.Navigation("Owner");
                 });
 
+            modelBuilder.Entity("ProductManagement.Api.Models.Order", b =>
+                {
+                    b.HasOne("ProductManagement.Api.Models.Business", "Business")
+                        .WithMany()
+                        .HasForeignKey("BusinessId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Business");
+                });
+
             modelBuilder.Entity("ProductManagement.Api.Models.OrderItem", b =>
                 {
-                    b.HasOne("ProductManagement.Api.Models.Order", null)
+                    b.HasOne("ProductManagement.Api.Models.Order", "Order")
                         .WithMany("Items")
                         .HasForeignKey("OrderId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("ProductManagement.Api.Models.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+
+                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("ProductManagement.Api.Models.Product", b =>
