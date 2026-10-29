@@ -1,40 +1,63 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProductManagement.Api.DTOs;
 using ProductManagement.Api.Services;
-using Microsoft.AspNetCore.Authorization;
 
 namespace ProductManagement.Api.Controllers;
 
 [Authorize]
 [ApiController]
 [Route("api/[controller]")]
-public class SuppliersController : ControllerBase
+public class SuppliersController(ISupplierService service) : ControllerBase
 {
-    private readonly ISupplierService _service;
-    public SuppliersController(ISupplierService service)
-        => _service = service;
-
     [HttpGet]
-    public async Task<ActionResult<List<SupplierResponseDto>>> GetAll(CancellationToken ct)
-        => Ok(await _service.GetAllAsync(ct));
+    public async Task<ActionResult<List<SupplierResponseDto>>> GetAll(
+        CancellationToken ct)
+    {
+        var userId = GetCurrentUserId();
+        return userId is null
+            ? Unauthorized()
+            : Ok(await service.GetAllAsync(userId, ct));
+    }
 
     [HttpGet("{id:int}")]
-    public async Task<ActionResult<SupplierResponseDto>> GetById(int id, CancellationToken ct)
+    public async Task<ActionResult<SupplierResponseDto>> GetById(
+        int id, CancellationToken ct)
     {
-        var supplier = await _service.GetByIdAsync(id, ct);
+        var userId = GetCurrentUserId();
+        if (userId is null) return Unauthorized();
+        var supplier = await service.GetByIdAsync(id, userId, ct);
         return supplier is null ? NotFound() : Ok(supplier);
     }
 
     [HttpPost]
-    public async Task<ActionResult<SupplierResponseDto>> Create(CreateSupplierDto request, CancellationToken ct)
+    public async Task<ActionResult<SupplierResponseDto>> Create(
+        CreateSupplierDto request, CancellationToken ct)
     {
+        var userId = GetCurrentUserId();
+        if (userId is null) return Unauthorized();
         try
         {
-            var created = await _service.CreateAsync(request, ct);
-            return CreatedAtAction(
-                nameof(GetById),
-                new { id = created.Id }, 
-                created);
+            var created = await service.CreateAsync(request, userId, ct);
+            return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
+    }
+
+    [HttpPut("{id:int}")]
+    public async Task<IActionResult> Update(
+        int id, UpdateSupplierDto request, CancellationToken ct)
+    {
+        var userId = GetCurrentUserId();
+        if (userId is null) return Unauthorized();
+        try
+        {
+            var updated = await service.UpdateAsync(id, request, userId, ct);
+            return updated ? NoContent() : NotFound();
         }
         catch (InvalidOperationException ex)
         {
@@ -45,9 +68,11 @@ public class SuppliersController : ControllerBase
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id, CancellationToken ct)
     {
+        var userId = GetCurrentUserId();
+        if (userId is null) return Unauthorized();
         try
         {
-            bool deleted = await _service.DeleteAsync(id, ct);
+            var deleted = await service.DeleteAsync(id, userId, ct);
             return deleted ? NoContent() : NotFound();
         }
         catch (InvalidOperationException ex)
@@ -55,4 +80,7 @@ public class SuppliersController : ControllerBase
             return Conflict(new { message = ex.Message });
         }
     }
+
+    private string? GetCurrentUserId()
+        => User.FindFirstValue(ClaimTypes.NameIdentifier);
 }

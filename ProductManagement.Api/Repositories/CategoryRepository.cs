@@ -14,9 +14,10 @@ public class CategoryRepository : ICategoryRepository
         _dbContext = dbContext;
     }
 
-    public async Task<(IReadOnlyCollection<Category> Items, int TotalCount)> GetAllAsync(CategoryQuery request, CancellationToken ct)
+    public async Task<(IReadOnlyCollection<Category> Items, int TotalCount)> GetAllAsync(CategoryQuery request, int businessId, CancellationToken ct)
     {
-        var query = _dbContext.Categories.AsQueryable();
+        var query = _dbContext.Categories
+            .Where(c => c.BusinessId == businessId);
 
         if (!string.IsNullOrWhiteSpace(request.Name))
         {
@@ -30,7 +31,7 @@ public class CategoryRepository : ICategoryRepository
 
         var totalCount = await query.CountAsync(ct);
 
-        var items = await query
+        var items = await query.AsNoTracking()
             .Skip((request.Page - 1) * request.PageSize)
             .Take(request.PageSize)
             .ToListAsync(ct);
@@ -38,9 +39,10 @@ public class CategoryRepository : ICategoryRepository
         return (items, totalCount);
     }
 
-    public async Task<Category?> GetByIdAsync(int id, CancellationToken ct)
+    public async Task<Category?> GetByIdAsync(int id, int businessId, CancellationToken ct)
     {
-        return await _dbContext.Categories.FindAsync(new object[] { id }, ct);
+        return await _dbContext.Categories.FirstOrDefaultAsync(
+            c => c.Id == id && c.BusinessId == businessId, ct);
     }
 
     public async Task<Category> AddAsync(Category category, CancellationToken ct)
@@ -61,4 +63,9 @@ public class CategoryRepository : ICategoryRepository
         _dbContext.Categories.Remove(category);
         await _dbContext.SaveChangesAsync(ct);
     }
+
+    public Task<bool> IsUsedByProductsAsync(
+        int id, int businessId, CancellationToken ct)
+        => _dbContext.Products.AnyAsync(
+            p => p.CategoryId == id && p.BusinessId == businessId, ct);
 }

@@ -77,10 +77,16 @@ public class GlobalExceptionHandler(
             httpContext.Response.StatusCode =
                 StatusCodes.Status409Conflict;
 
+            var message = sqlException.Message.Contains(
+                "IX_Suppliers_BusinessId_Email",
+                StringComparison.OrdinalIgnoreCase)
+                ? "A supplier with this email already exists in this business."
+                : "A product with the specified SKU already exists.";
+
             await httpContext.Response.WriteAsJsonAsync(new
             {
                 status = 409,
-                message = "A product with the specified SKU already exists."
+                message
             }, ct);
 
             return true;

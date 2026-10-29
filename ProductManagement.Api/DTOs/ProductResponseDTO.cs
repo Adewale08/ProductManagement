@@ -14,4 +14,6 @@ public record ProductResponseDto(
     int StockQuantity,
     bool IsActive,
     DateTime CreatedAtUtc,
-    DateTime? UpdatedAtUtc);
+    DateTime? UpdatedAtUtc,
+    int? CategoryId = null,
+    int? SupplierId = null);

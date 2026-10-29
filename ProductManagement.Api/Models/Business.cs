@@ -9,4 +9,8 @@ public class Business
     public ApplicationUser Owner { get; set; } = null!;
     public ICollection<Product> Products { get; set; }
         = new List<Product>();
+    public ICollection<Supplier> Suppliers { get; set; }
+        = new List<Supplier>();
+    public ICollection<Category> Categories { get; set; }
+        = new List<Category>();
 }

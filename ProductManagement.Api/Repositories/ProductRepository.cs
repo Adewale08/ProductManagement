@@ -24,6 +24,7 @@ public class ProductRepository : IProductRepository
         // Only retrieve products belonging to this business.
         var query = _db.Products
             .AsNoTracking()
+            .Include(p => p.CategoryRecord)
             .Where(p => p.BusinessId == businessId);
 
         if (!string.IsNullOrWhiteSpace(request.Search))
@@ -84,7 +85,9 @@ public class ProductRepository : IProductRepository
         int businessId,
         CancellationToken ct)
     {
-        return _db.Products.FirstOrDefaultAsync(
+        return _db.Products
+            .Include(p => p.CategoryRecord)
+            .FirstOrDefaultAsync(
             p => p.Id == id && p.BusinessId == businessId,
             ct);
     }

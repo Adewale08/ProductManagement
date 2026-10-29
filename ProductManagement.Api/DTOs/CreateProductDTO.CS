@@ -18,6 +18,13 @@ public class CreateProductDto
     [Required, StringLength(80)]
     public string Category { get; set; } = string.Empty;
 
+    // Optional to preserve existing clients that use the legacy Category string.
+    [Range(1, int.MaxValue)]
+    public int? CategoryId { get; set; }
+
+    [Range(1, int.MaxValue)]
+    public int? SupplierId { get; set; }
+
     [Range(0, 999_999_999)]
     public decimal Price { get; set; }
 

@@ -8,4 +8,6 @@ public class Category
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAtUtc { get; set; }
     public bool IsActive { get; set; } = true;
+    public int? BusinessId { get; set; }
+    public Business? Business { get; set; }
 }

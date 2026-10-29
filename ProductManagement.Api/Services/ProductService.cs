@@ -11,15 +11,21 @@ public class ProductService : IProductService
 {
     private readonly IProductRepository _repository;
     private readonly IBusinessRepository _businessRepository;
+    private readonly ICategoryRepository _categoryRepository;
+    private readonly ISupplierRepository _supplierRepository;
     private readonly ILogger<ProductService> _logger;
 
     public ProductService(
         IProductRepository repository,
         IBusinessRepository businessRepository,
+        ICategoryRepository categoryRepository,
+        ISupplierRepository supplierRepository,
         ILogger<ProductService> logger)
     {
         _repository = repository;
         _businessRepository = businessRepository;
+        _categoryRepository = categoryRepository;
+        _supplierRepository = supplierRepository;
         _logger = logger;
     }
 
@@ -51,12 +57,45 @@ public class ProductService : IProductService
             product.Name,
             product.Description,
             product.Sku,
-            product.Category,
+            product.CategoryRecord?.Name ?? product.Category,
             product.Price,
             product.StockQuantity,
             product.IsActive,
             product.CreatedAtUtc,
-            product.UpdatedAtUtc);
+            product.UpdatedAtUtc,
+            product.CategoryId,
+            product.SupplierId);
+
+    private async Task<string> ValidateAndResolveCategoryAsync(
+        string categoryName,
+        int? categoryId,
+        int businessId,
+        CancellationToken ct)
+    {
+        if (!categoryId.HasValue) return categoryName;
+
+        var category = await _categoryRepository.GetByIdAsync(
+            categoryId.Value, businessId, ct);
+        if (category is null)
+            throw new ValidationException(
+                "The selected category is unavailable for this business.");
+        if (category.Name.Length > 80)
+            throw new ValidationException(
+                "A category assigned to a product must have a name of at most 80 characters.");
+
+        return category.Name;
+    }
+
+    private async Task ValidateSupplierAsync(
+        int? supplierId, int businessId, CancellationToken ct)
+    {
+        if (!supplierId.HasValue) return;
+        var supplier = await _supplierRepository.GetByIdAsync(
+            supplierId.Value, businessId, ct);
+        if (supplier is null)
+            throw new ValidationException(
+                "The selected supplier is unavailable for this business.");
+    }
 
     public async Task<IReadOnlyCollection<ProductResponseDto>> GetAllAsync(
         string userId,
@@ -118,13 +157,18 @@ public class ProductService : IProductService
             throw new DuplicateSkuException(request.Sku);
 
         EnsureValidBusinessValues(request.Price, request.StockQuantity);
+        var categoryName = await ValidateAndResolveCategoryAsync(
+            request.Category, request.CategoryId, businessId.Value, ct);
+        await ValidateSupplierAsync(request.SupplierId, businessId.Value, ct);
 
         var product = new Product
         {
             Name = request.Name,
             Description = request.Description,
             Sku = normalisedSku,
-            Category = request.Category,
+            Category = categoryName,
+            CategoryId = request.CategoryId,
+            SupplierId = request.SupplierId,
             Price = request.Price,
             StockQuantity = request.StockQuantity,
             IsActive = true,
@@ -162,6 +206,21 @@ public class ProductService : IProductService
             return false;
 
         EnsureValidBusinessValues(request.Price, request.StockQuantity);
+        var categoryId = request.CategoryId;
+        if (!categoryId.HasValue && product.CategoryId.HasValue &&
+            string.Equals(
+                request.Category,
+                product.CategoryRecord?.Name ?? product.Category,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            // Older clients only send the Category string. Keep an existing
+            // relation when that string still represents the same category.
+            categoryId = product.CategoryId;
+        }
+        var supplierId = request.SupplierId ?? product.SupplierId;
+        var categoryName = await ValidateAndResolveCategoryAsync(
+            request.Category, categoryId, businessId.Value, ct);
+        await ValidateSupplierAsync(supplierId, businessId.Value, ct);
 
         var newSku = NormaliseSku(request.Sku);
 
@@ -183,7 +242,9 @@ public class ProductService : IProductService
         product.Name = request.Name;
         product.Description = request.Description;
         product.Sku = newSku;
-        product.Category = request.Category;
+        product.Category = categoryName;
+        product.CategoryId = categoryId;
+        product.SupplierId = supplierId;
         product.Price = request.Price;
         product.StockQuantity = request.StockQuantity;
         product.IsActive = request.IsActive;

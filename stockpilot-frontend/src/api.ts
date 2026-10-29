@@ -1,5 +1,9 @@
 export type Product = { id: number; name: string; description: string | null; sku: string; category: string; price: number; stockQuantity: number; isActive: boolean; createdAtUtc: string; updatedAtUtc: string | null }
 export type ProductInput = Omit<Product, 'id' | 'createdAtUtc' | 'updatedAtUtc'>
+export type Category = { id: number; name: string; description: string | null; isActive: boolean; createdAtUtc: string; updatedAtUtc: string | null }
+export type CategoryInput = { name: string; description: string | null; isActive?: boolean }
+export type Supplier = { id: number; name: string; email: string; phoneNumber: string | null; isActive: boolean }
+export type SupplierInput = { name: string; email: string; phoneNumber: string | null; isActive?: boolean }
 export type OrderItem = { productId: number; productName: string; quantity: number; unitPrice: number; lineTotal: number }
 export type Order = { id: number; createdAtUtc: string; status: string; totalAmount: number; items: OrderItem[] }
 export type User = { userId: string; businessName: string; email: string }

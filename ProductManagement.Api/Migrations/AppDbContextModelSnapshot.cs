@@ -254,6 +254,9 @@ namespace ProductManagement.Api.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("BusinessId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("datetime2");
 
@@ -273,6 +276,11 @@ namespace ProductManagement.Api.Migrations
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("BusinessId");
+
+                    b.HasIndex("Id", "BusinessId")
+                        .IsUnique();
 
                     b.ToTable("Categories");
                 });
@@ -352,6 +360,9 @@ namespace ProductManagement.Api.Migrations
                         .HasMaxLength(80)
                         .HasColumnType("nvarchar(80)");
 
+                    b.Property<int?>("CategoryId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("datetime2");
 
@@ -389,6 +400,8 @@ namespace ProductManagement.Api.Migrations
 
                     b.HasIndex("BusinessId");
 
+                    b.HasIndex("CategoryId");
+
                     b.HasIndex("Sku")
                         .IsUnique();
 
@@ -404,6 +417,9 @@ namespace ProductManagement.Api.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("BusinessId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -423,6 +439,15 @@ namespace ProductManagement.Api.Migrations
                         .HasColumnType("nvarchar(30)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("BusinessId");
+
+                    b.HasIndex("BusinessId", "Email")
+                        .IsUnique()
+                        .HasFilter("[BusinessId] IS NOT NULL");
+
+                    b.HasIndex("Id", "BusinessId")
+                        .IsUnique();
 
                     b.ToTable("Suppliers");
                 });
@@ -489,6 +514,16 @@ namespace ProductManagement.Api.Migrations
                     b.Navigation("Owner");
                 });
 
+            modelBuilder.Entity("ProductManagement.Api.Models.Category", b =>
+                {
+                    b.HasOne("ProductManagement.Api.Models.Business", "Business")
+                        .WithMany("Categories")
+                        .HasForeignKey("BusinessId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Business");
+                });
+
             modelBuilder.Entity("ProductManagement.Api.Models.Order", b =>
                 {
                     b.HasOne("ProductManagement.Api.Models.Business", "Business")
@@ -525,6 +560,11 @@ namespace ProductManagement.Api.Migrations
                         .WithMany("Products")
                         .HasForeignKey("BusinessId");
 
+                    b.HasOne("ProductManagement.Api.Models.Category", "CategoryRecord")
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("ProductManagement.Api.Models.Supplier", "Supplier")
                         .WithMany("Products")
                         .HasForeignKey("SupplierId")
@@ -532,7 +572,19 @@ namespace ProductManagement.Api.Migrations
 
                     b.Navigation("Business");
 
+                    b.Navigation("CategoryRecord");
+
                     b.Navigation("Supplier");
+                });
+
+            modelBuilder.Entity("ProductManagement.Api.Models.Supplier", b =>
+                {
+                    b.HasOne("ProductManagement.Api.Models.Business", "Business")
+                        .WithMany("Suppliers")
+                        .HasForeignKey("BusinessId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Business");
                 });
 
             modelBuilder.Entity("ProductManagement.Api.Models.ApplicationUser", b =>
@@ -542,7 +594,11 @@ namespace ProductManagement.Api.Migrations
 
             modelBuilder.Entity("ProductManagement.Api.Models.Business", b =>
                 {
+                    b.Navigation("Categories");
+
                     b.Navigation("Products");
+
+                    b.Navigation("Suppliers");
                 });
 
             modelBuilder.Entity("ProductManagement.Api.Models.Order", b =>
