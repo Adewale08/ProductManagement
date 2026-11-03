@@ -14,9 +14,6 @@ export class ApiError extends Error {
   constructor(status: number, message: string) { super(message); this.status = status }
 }
 export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
-  if (import.meta.env.PROD && !base) {
-    throw new ApiError(0, 'The API is not configured for this deployment. Set VITE_API_BASE_URL in Vercel to your hosted API origin, then redeploy.')
-  }
   const headers = new Headers(init.headers)
   if (init.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json')
   const response = await fetch(`${base}${path}`, {

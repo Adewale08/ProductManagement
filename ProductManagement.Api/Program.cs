@@ -9,13 +9,6 @@ using ProductManagement.Api.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var frontendOrigins = builder.Configuration["FrontendOrigins"]?
-    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-    .Select(origin => origin.TrimEnd('/'))
-    .Where(origin => !string.IsNullOrWhiteSpace(origin))
-    .Distinct(StringComparer.OrdinalIgnoreCase)
-    .ToArray() ?? [];
-
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -46,18 +39,6 @@ builder.Services
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
 
-if (frontendOrigins.Length > 0)
-{
-    builder.Services.AddCors(options => options.AddPolicy(
-        "StockPilotFrontend",
-        policy => policy
-            .WithOrigins(frontendOrigins)
-            .AllowAnyHeader()
-            .AllowAnyMethod()
-            .AllowCredentials()));
-
-}
-
 var app = builder.Build();
 app.UseExceptionHandler();
 
@@ -72,11 +53,6 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
-if (frontendOrigins.Length > 0)
-{
-    app.UseCors("StockPilotFrontend");
-}
 
 app.UseAuthentication();
 app.UseAuthorization();

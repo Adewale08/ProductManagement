@@ -12,7 +12,7 @@ React, TypeScript and Vite client for the existing ASP.NET Core API. The fronten
 
 The Vite development proxy sends `/api`, `/Products`, `/Orders`, `/Category` and `/Suppliers` to `https://localhost:7147`. It keeps browser calls same-origin during development, so the Identity cookie works without adding permissive CORS rules. `secure: false` is limited to Vite's local proxy connection to the development HTTPS certificate.
 
-For a deployed frontend, set `VITE_API_BASE_URL` in the deployment environment to the hosted API origin (for example, `https://api.example.com`, with no trailing slash). This value is included in the built frontend, so redeploy after changing it. On the API host, set `FrontendOrigins` to the exact frontend origin (or a comma-separated list of exact trusted origins) to enable credentialed CORS. For cookie authentication, host the frontend and API on HTTPS origins under the same site (for example, `app.example.com` and `api.example.com`); cross-site cookies need additional CSRF protection and should not be enabled by simply setting `SameSite=None`. Never use wildcard CORS with cookies. No API secrets belong in this frontend.
+For a deployed frontend, set `VITE_API_BASE_URL` in the deployment environment to the API origin (for example, `https://api.example.com`, with no trailing slash). The API must then allow the exact frontend origin with credentials and configure cookie `SameSite`/`Secure` settings for that deployment. Do not use wildcard CORS with cookies. No API secrets belong in this frontend.
 
 ## API-backed features
 
