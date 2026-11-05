@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ProductManagement.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+66e1f8aebe52bda4d110c7784186046390b55c0f")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9bdab7c0eceaf7cceca0d44ad6a9c0e289c0d360")]
 [assembly: System.Reflection.AssemblyProductAttribute("ProductManagement.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ProductManagement.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
