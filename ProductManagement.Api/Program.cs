@@ -37,7 +37,7 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options
-        .UseSqlServer(connectionString)
+        .UseNpgsql(connectionString, sql => sql.EnableRetryOnFailure())
         .EnableDetailedErrors()
         .LogTo(Console.WriteLine, LogLevel.Information));
 

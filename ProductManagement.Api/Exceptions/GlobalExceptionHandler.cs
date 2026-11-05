@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Diagnostics;
-using Microsoft.Data.SqlClient;
+using Npgsql;
 
 namespace ProductManagement.Api.Exceptions;
 public class GlobalExceptionHandler(
@@ -70,16 +70,17 @@ public class GlobalExceptionHandler(
             return true;
         }
 
-        var sqlException = FindSqlException(exception);
+        var postgresException = FindPostgresException(exception);
 
-        if (sqlException?.Number is 2601 or 2627)
+        if (postgresException?.SqlState == PostgresErrorCodes.UniqueViolation)
         {
             httpContext.Response.StatusCode =
                 StatusCodes.Status409Conflict;
 
-            var message = sqlException.Message.Contains(
+            var message = postgresException.ConstraintName?.Contains(
                 "IX_Suppliers_BusinessId_Email",
                 StringComparison.OrdinalIgnoreCase)
+                == true
                 ? "A supplier with this email already exists in this business."
                 : "A product with the specified SKU already exists.";
 
@@ -92,7 +93,7 @@ public class GlobalExceptionHandler(
             return true;
         }
 
-        if (sqlException?.Number == 1205)
+        if (postgresException?.SqlState == PostgresErrorCodes.DeadlockDetected)
         {
             httpContext.Response.StatusCode =
                 StatusCodes.Status409Conflict;
@@ -146,15 +147,15 @@ public class GlobalExceptionHandler(
         return true;
     }
 
-    private static SqlException? FindSqlException(Exception exception)
+    private static PostgresException? FindPostgresException(Exception exception)
     {
         for (Exception? current = exception;
              current is not null;
              current = current.InnerException)
         {
-            if (current is SqlException sqlException)
+            if (current is PostgresException postgresException)
             {
-                return sqlException;
+                return postgresException;
             }
         }
 

@@ -21,6 +21,4 @@ COPY --from=build /app/publish .
 
 EXPOSE 8080
 
-ENV ASPNETCORE_URLS=http://+:8080
-
-ENTRYPOINT ["dotnet", "ProductManagement.Api.dll"]
+ENTRYPOINT ["sh", "-c", "dotnet ProductManagement.Api.dll --urls http://0.0.0.0:${PORT:-8080}"]

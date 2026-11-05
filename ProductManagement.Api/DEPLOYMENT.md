@@ -1,51 +1,51 @@
-# Deploy StockPilot API to MonsterASP.NET
+# Deploy StockPilot API with Supabase PostgreSQL and Render
 
-The API targets .NET 10 and uses EF Core with SQL Server. Keep database credentials in the hosting control panel; do not commit them to this repository.
+The API uses EF Core with PostgreSQL and keeps ASP.NET Core Identity for login. Supabase Auth is not used. Keep database credentials in environment variables; never commit them.
 
-## 1. Create the website and database
+## 1. Create the Supabase database
 
-Create a .NET 10 website and an MSSQL database in MonsterASP.NET. The provider documents that the website and database need to be on the same plan to use the local database connection string. Copy the database's **Local access** connection string for the hosted API.
+Create a Supabase project and copy its PostgreSQL **Session pooler** connection string from the dashboard. Use the ADO.NET/Npgsql format and port `5432`; do not use the transaction pooler for EF migrations. Keep the connection string private.
 
-The local SQL Express connection string is now in `appsettings.Development.json` only. Production must receive its own connection string through the hosting environment.
+Do not commit the connection string or share it.
 
-## 2. Set production environment variables
+## 2. Create the PostgreSQL schema
 
-In the website's Environment variables settings, set:
+In PowerShell at the repository root, set the connection string for this terminal session and apply the EF migration:
+
+```powershell
+$env:ConnectionStrings__DefaultConnection = Read-Host 'Paste the Supabase session-pooler connection string'
+dotnet ef database update --project .\ProductManagement.Api --startup-project .\ProductManagement.Api --configuration Release
+```
+
+The migration creates the schema in Supabase. Run this against a new/empty Supabase project. The SQL Server database is not changed.
+
+## 3. Copy existing SQL Server data (if needed)
+
+Back up the SQL Server database and stop writes to it before the final transfer. The transfer utility reads the SQL Server tables and inserts their rows into the migrated Supabase tables; it preserves IDs and ASP.NET Identity records, including password hashes. It never writes to the source database.
+
+Set both connection strings locally in PowerShell. The SQL Server source string can use Windows Integrated Authentication; the Supabase target string must be the same session-pooler connection string used above.
+
+```powershell
+$env:SQLSERVER_SOURCE_CONNECTION_STRING = 'Server=YOUR_SQL_SERVER;Database=ProductManagementDb;Integrated Security=True;TrustServerCertificate=True;'
+$env:SUPABASE_CONNECTION_STRING = Read-Host 'Paste the Supabase session-pooler connection string'
+dotnet run --project .\tools\SqlServerToSupabase\SqlServerToSupabase.csproj
+```
+
+The utility aborts without committing if a target table already has rows or if source and target table columns do not match. If it aborts, keep the backup and resolve the reported schema/data issue before retrying against a fresh target. Verify the copied table counts and test login before switching the frontend to the new API.
+
+## 4. Configure Render
+
+Set these variables in the Render API service's **Environment** settings:
 
 | Name | Value |
 | --- | --- |
-| `ASPNETCORE_ENVIRONMENT` | `Production` |
-| `ConnectionStrings__DefaultConnection` | The hosted database's Local access connection string |
-| `FrontendOrigins` | The exact HTTPS origin of the StockPilot frontend, without a trailing slash |
+| `ConnectionStrings__DefaultConnection` | Supabase session-pooler connection string |
+| `FrontendOrigins` | Exact HTTPS origin of the frontend, e.g. `https://your-app.vercel.app` |
 
-For example, `FrontendOrigins` should be `https://app.example.com`, not a wildcard and not a URL with a path. Restart the website after changing environment variables.
+Render supplies `PORT`; the root `Dockerfile` binds the API to that port. Commit and push the code, then deploy the updated service.
 
-## 3. Apply database migrations
+## 5. Configure the frontend
 
-For a new, empty hosted database, generate the SQL migration script from the repository root:
+Set `VITE_API_BASE_URL` in the Vercel frontend project's Environment Variables to the deployed API's HTTPS origin only (no `/swagger`, `/api`, or trailing slash), then redeploy the frontend. The frontend and API need to use HTTPS for cookie-based login.
 
-```powershell
-dotnet tool install --global dotnet-ef --version 10.0.13
-dotnet ef migrations script --idempotent --project .\ProductManagement.Api --startup-project .\ProductManagement.Api --output .\stockpilot-migrations.sql
-```
-
-Run `stockpilot-migrations.sql` against the new hosted database using SQL Server Management Studio. If the database already contains data, back it up and inspect its EF migration history and legacy records before running the script. Do not use this new-database procedure to overwrite or clean up existing records.
-
-## 4. Publish the API
-
-From the repository root, publish the API:
-
-```powershell
-dotnet publish .\ProductManagement.Api\ProductManagement.Api.csproj --configuration Release --output .\api-publish
-Compress-Archive -Path .\api-publish\* -DestinationPath .\stockpilot-api.zip -Force
-```
-
-Upload `stockpilot-api.zip` using the provider's ZIP deployment flow and extract the contents into the website's application root (`wwwroot`). Upload the contents of the publish output, not a parent folder containing the output. The publish output contains the IIS `web.config` generated for ASP.NET Core hosting.
-
-## 5. Connect the frontend
-
-Copy the deployed API's HTTPS origin. In Vercel, set `VITE_API_BASE_URL` to that origin only, with no trailing slash or `/api` suffix, then redeploy the frontend.
-
-Identity uses cookies. For dependable browser login, put the frontend and API on custom subdomains of the same domain, such as `app.example.com` and `api.example.com`. Set `FrontendOrigins` to the frontend's exact origin and `VITE_API_BASE_URL` to the API's exact origin.
-
-The API only enables Swagger in Development, so a production `/swagger` 404 is expected. Test an API route such as `/api/Auth/me`; a `401` while signed out confirms the API route is responding and enforcing authentication.
+Swagger is enabled only in Development, so a production `/swagger` 404 is expected.
