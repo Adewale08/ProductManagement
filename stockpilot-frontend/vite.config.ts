@@ -1,16 +1,18 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
+const pythonApi = 'http://127.0.0.1:8000'
+
 export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
     proxy: {
-      '/api': { target: 'http://localhost:5232', changeOrigin: true, secure: false },
-      '/Products': { target: 'http://localhost:5232', changeOrigin: true, secure: false },
-      '/Orders': { target: 'http://localhost:5232', changeOrigin: true, secure: false },
-      '/Category': { target: 'http://localhost:5232', changeOrigin: true, secure: false },
-      '/Suppliers': { target: 'http://localhost:5232', changeOrigin: true, secure: false }
+      '/api': { target: pythonApi, changeOrigin: true },
+      '/Products': { target: pythonApi, changeOrigin: true },
+      '/Orders': { target: pythonApi, changeOrigin: true },
+      '/Category': { target: pythonApi, changeOrigin: true },
+      '/Suppliers': { target: pythonApi, changeOrigin: true }
     }
   }
 })
